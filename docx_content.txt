@@ -1,0 +1,446 @@
+🍽
+APPLICATION DE GESTION DE RECETTES
+avec Calcul Nutritionnel & Analyse d'Image IA
+─────────────────────────────────────────────
+Laravel 11
+MySQL WAMP
+Blade + AlpineJS
+Edamam API
+Claude Vision
+PLAN D'EXÉCUTION — 6 HEURES
+Document généré le 21 avril 2026
+1. Vision du Projet
+Cette application Laravel combine trois fonctionnalités majeures dans une interface élégante glassmorphism : la gestion de recettes avec calcul nutritionnel automatique, la recherche intelligente par ingrédients disponibles (contenu du frigo), et l'analyse d'images IA pour identifier les aliments et estimer leurs calories.
+1.1 Fonctionnalités Principales
+Fonctionnalité
+Description
+Gestion de recettes CRUD
+Créer, éditer, supprimer des recettes avec ingrédients, étapes, photos
+Calcul nutritionnel auto
+Calories, protéines, glucides, lipides via API Edamam/OpenFoodFacts
+Recherche par ingrédients
+Entrer les ingrédients du frigo → recettes faisables triées par correspondance
+Analyse image plat
+Upload photo d'un plat → détection aliments + estimation calories par IA
+Scan frigo IA
+Upload photo du frigo → liste d'ingrédients détectés → recettes suggérées
+1.2 Palette de Couleurs — Design Glassmorphism
+Le design est basé sur un fond sombre profond avec des cartes en verre translucide et des accents naturels (vert émeraude pour la fraîcheur, orange pour l'appétit).
+Rôle
+Couleur
+Hex
+Usage
+Fond principal
+■ Bleu nuit profond
+#0D1B2A
+Background de toute l'app
+Accent primaire
+■ Vert émeraude frais
+#2ECC9A
+CTA, calories, accents
+Accent secondaire
+■ Orange doux appétissant
+#F4A261
+Badges catégories, macros
+Glass cards
+■ Blanc très transparent
+rgba(255,255,255,0.07)
+backdrop-filter: blur(16px)
+Texte clair
+■ Blanc cassé
+#F0F4F8
+Corps de texte sur fond sombre
+2. Architecture Technique
+2.1 Structure des Dossiers Laravel
+Organisation recommandée pour séparer clairement les responsabilités :
+app/
+  Http/
+    Controllers/
+      RecipeController.php        # CRUD recettes
+      NutritionController.php      # Calcul calories
+      ImageAnalysisController.php  # Upload + appel Claude Vision
+      SearchController.php         # Recherche par ingrédients
+    Requests/
+      StoreRecipeRequest.php
+  Services/
+    NutritionService.php           # Appels Edamam API
+    ClaudeVisionService.php        # Appels Claude API
+    NutritionCalculator.php        # Calcul macros totaux
+  Models/
+    Recipe.php | Ingredient.php | RecipeSearch.php
+resources/views/
+  components/                      # Composants Blade réutilisables
+    glass-card.blade.php
+    recipe-card.blade.php
+    calorie-ring.blade.php
+    nav.blade.php
+  recipes/ | search/ | analysis/   # Pages principales
+2.2 Schéma de Base de Données
+Colonne
+Type
+Nullable
+Description
+TABLE : recipes
+id
+bigint PK AI
+NON
+Identifiant auto-incrémenté
+title
+varchar(255)
+NON
+Nom de la recette
+description
+text
+OUI
+Description longue de la recette
+category
+varchar(100)
+NON
+Entrée, Plat, Dessert, Snack…
+prep_time
+int
+NON
+Temps de préparation en minutes
+servings
+int
+NON
+Nombre de portions
+image_path
+varchar(500)
+OUI
+Chemin stockage image (storage/app/public)
+total_calories
+decimal(8,2)
+OUI
+Calculé automatiquement à la sauvegarde
+TABLE : ingredients
+id
+bigint PK AI
+NON
+Identifiant auto-incrémenté
+recipe_id
+bigint FK
+NON
+Clé étrangère → recipes.id (CASCADE DELETE)
+name
+varchar(255)
+NON
+Nom de l'ingrédient (ex: poulet, farine)
+quantity
+decimal(8,2)
+NON
+Quantité (ex: 250)
+unit
+varchar(50)
+NON
+Unité : g, kg, ml, tasse, cuillère…
+calories_per_100g
+decimal(6,2)
+OUI
+Données récupérées via API Edamam
+3. Plan d'Exécution — 6 Heures
+Phase 1 — Setup & Architecture (0h00 – 0h45)
+PHASE 1  Setup & Architecture      0h00 – 0h45
+Tâche
+Détail & Implémentation
+Durée
+Installation & Configuration WAMP + Laravel
+Créer le projet Laravel 11 via Composer. Configurer le fichier .env (DB_HOST=127.0.0.1, DB_DATABASE=recettes_db, DB_USERNAME=root, DB_PASSWORD=). Activer mod_rewrite dans Apache via le panneau WAMP. Créer la base MySQL via phpMyAdmin. Vérifier php artisan serve sur le port 8000.
+composer create-project laravel/laravel recettes-app
+cd recettes-app
+php artisan key:generate
+php artisan storage:link
+15 min
+Migrations — Tables BDD
+Créer et exécuter les migrations pour les tables recipes et ingredients. Ajouter les relations Eloquent (Recipe hasMany Ingredient, Ingredient belongsTo Recipe). Seeder de test avec 5 recettes exemples pour avoir des données dès le départ.
+php artisan make:model Recipe -mcr
+php artisan make:model Ingredient -m
+php artisan migrate --seed
+15 min
+Structure Routes & Controllers
+Définir toutes les routes dans routes/web.php avant de coder pour avoir une vision globale. Routes CRUD recettes, route de recherche, routes d'analyse d'image (plat et frigo). Grouper avec middleware auth si gestion de comptes souhaitée.
+Route::resource('recipes', RecipeController::class);
+Route::post('/search', [SearchController::class, 'search']);
+Route::post('/analyze-image', [ImageAnalysisController::class, 'analyzeFood']);
+Route::post('/scan-fridge', [ImageAnalysisController::class, 'scanFridge']);
+15 min
+Phase 2 — Design System Glassmorphism (0h45 – 1h45)
+PHASE 2  Design System & UI      0h45 – 1h45
+Tâche
+Détail & Implémentation
+Durée
+Variables CSS & Layout Global
+Configurer Tailwind CSS via CDN avec couleurs custom. Écrire les variables CSS glassmorphism dans app.css. Fond dégradé radial sombre. Configurer le layout principal (sidebar navigation + zone de contenu).
+:root {
+  --glass: rgba(255,255,255,0.07);
+  --glass-border: rgba(255,255,255,0.12);
+  --blur: blur(16px);
+  --primary: #2ECC9A;
+  --accent: #F4A261;
+  --bg: #0D1B2A;
+}
+20 min
+Composants Blade Glassmorphism
+Créer les composants réutilisables Blade : x-glass-card (backdrop-filter, border rgba, border-radius 20px), x-recipe-card (image en fond, overlay dégradé, badge calorie, animation hover), x-calorie-ring (SVG animé en cercle avec stroke-dasharray), x-nav (glassmorphism sticky, blur au scroll via AlpineJS).
+25 min
+Animations & Motion Design
+Définir les keyframes CSS : fadeSlideUp (opacity 0→1, translateY 20px→0 avec stagger) pour les cards. Loader spinner pendant appels API. Micro-interactions sur boutons (scale 0.97 + glow vert). Progress bar calorie animée (width: 0% → X% en 0.8s). Effet ripple sur click avec AlpineJS.
+@keyframes fadeSlideUp {
+  from { opacity:0; transform: translateY(20px); }
+  to   { opacity:1; transform: translateY(0); }
+}
+.card { animation: fadeSlideUp 0.4s ease forwards; }
+15 min
+Phase 3 — Intégration API Nutritionnelle (1h45 – 3h00)
+PHASE 3  API Nutrition & Recherche      1h45 – 3h00
+Tâche
+Détail & Implémentation
+Durée
+Service Edamam Food Database API
+Créer NutritionService.php. Endpoint: https://api.edamam.com/api/food-database/v2/parser?ingr={ingredient}&app_id={ID}&app_key={KEY}. Méthode getCalories(string $ingredient): array retourne calories, protein, fat, carbs, fiber. Cache Laravel 30 min (Redis ou file) pour limiter les requêtes API. Fallback automatique sur OpenFoodFacts API (gratuite, sans clé).
+public function getCalories(string $ingredient): array {
+  return Cache::remember('nutrition_'.$ingredient, 1800, function() use ($ingredient) {
+    $response = Http::get('https://api.edamam.com/api/food-database/v2/parser', [
+      'ingr' => $ingredient, 'app_id' => env('EDAMAM_APP_ID'), 'app_key' => env('EDAMAM_APP_KEY')
+    ]);
+    return $response->json()['hints'][0]['food']['nutrients'] ?? $this->fallback($ingredient);
+  });
+}
+25 min
+Calcul Nutritionnel Automatique
+NutritionCalculator.php : calcule les calories totales par recette = Σ (calories_per_100g × quantité en grammes). Table de conversion d'unités intégrée : 1 tasse de farine = 120g, 1 cuillère à soupe = 15g, 1 œuf = 60g, etc. Affichage macros par portion (total / nb portions). Recalcul automatique à chaque modification d'ingrédient en temps réel (AlpineJS + fetch).
+25 min
+Moteur de Recherche par Ingrédients
+Interface multi-tags : l'utilisateur saisit ses ingrédients un par un (champ avec auto-complétion, badge supprimable). POST vers SearchController qui fait une requête SQL avec MATCH/AGAINST sur la table ingredients pour scorer chaque recette par % d'ingrédients disponibles. Résultats triés du plus au moins faisable. Filtres additionnels : slider calories max, temps de préparation, catégorie.
+// Scoring SQL
+$recipes = Recipe::select('recipes.*',
+  DB::raw('COUNT(DISTINCT i.id) / r_total.total * 100 AS match_percent'))
+  ->join('ingredients as i', 'i.recipe_id', 'recipes.id')
+  ->whereIn('i.name', $searchIngredients)
+  ->groupBy('recipes.id')
+  ->orderByDesc('match_percent')
+  ->get();
+25 min
+Phase 4 — Module Analyse d'Image IA (3h00 – 4h30)
+PHASE 4  Analyse d'Image Claude Vision      3h00 – 4h30
+Tâche
+Détail & Implémentation
+Durée
+Upload & Prétraitement des Images
+Zone drag & drop avec AlpineJS (glisser une image ou cliquer pour ouvrir le sélecteur). Prévisualisation instantanée base64 avant envoi. Validation Laravel stricte : mimes:jpg,jpeg,png,webp, max:5120 (5 Mo). Stockage dans storage/app/public/uploads/ avec nom unique (UUID). Endpoint POST /analyze-image → ImageAnalysisController@analyzeFood.
+20 min
+Intégration Claude Vision API — Analyse d'un Plat
+ClaudeVisionService.php utilise le client HTTP Laravel pour appeler api.anthropic.com/v1/messages. Modèle : claude-opus-4-6. L'image est encodée en base64 et envoyée dans le payload. Prompt système précis pour obtenir une réponse JSON structurée. Timeout de 30s. Parser la réponse JSON et stocker le résultat.
+// Prompt pour analyse d'un plat
+$prompt = 'Tu es un nutritionniste expert. Analyse l\'image et identifie le plat.\n'
+  . 'Réponds UNIQUEMENT en JSON valide:\n'
+  . '{"dish_name":"...","ingredients":[{"name":"...","estimated_grams":0}],'
+  . '"total_calories":0,"confidence_score":0.0}';
+35 min
+Mode 'Scan Frigo' — Ingrédients → Recettes
+Prompt différent pour le scan frigo : identifier tous les aliments visibles et leurs quantités approximatives. La réponse JSON retourne une liste d'ingrédients. Ces ingrédients sont automatiquement injectés dans le moteur de recherche. Interface split-view : à gauche la photo annotée avec les zones détectées, à droite les recettes suggérées avec leur score de correspondance.
+// Prompt pour scan de frigo
+$prompt = 'Analyse ce réfrigérateur. Identifie TOUS les aliments visibles.\n'
+  . 'Réponds UNIQUEMENT en JSON:\n'
+  . '{"ingredients":[{"name":"...","quantity_visible":"..."}]}\n'
+  . 'Sois exhaustif et précis sur les quantités.';
+35 min
+Phase 5 — CRUD Recettes & Dashboard (4h30 – 5h30)
+PHASE 5  Dashboard & CRUD Recettes      4h30 – 5h30
+Tâche
+Détail & Implémentation
+Durée
+Formulaire Création/Édition — Wizard 3 Étapes
+Wizard AlpineJS multi-étapes : Étape 1 — Infos générales (titre, catégorie select, temps de préparation, nb portions). Étape 2 — Ingrédients dynamiques (bouton +Ajouter, champ nom avec auto-complétion API, quantité, unité select, calories calculées en temps réel ligne par ligne, total dynamique en bas). Étape 3 — Préparation (éditeur étapes avec drag & drop réordonnancement) + upload photo. Validation Laravel Form Requests à chaque étape.
+30 min
+Dashboard — Liste & Filtres
+Grille masonry CSS 3 colonnes (responsive 1-2-3). Chaque carte glassmorphism : image en fond avec overlay dégradé, badge catégorie coloré, calories en grand, temps de préparation, nb ingrédients. Barre de filtres collante : chips de catégories (Tout/Entrée/Plat/Dessert), slider calories max, slider temps max, champ recherche par nom. Compteur de résultats dynamique. Stats globales en haut : nb recettes, calorie moyenne, ingrédient le plus utilisé.
+20 min
+Page Détail Recette
+Hero image plein largeur avec overlay dégradé sombre. Section macros : 4 glass-cards côte à côte (kcal, protéines, glucides, lipides) avec icônes SVG. Anneau calorie SVG animé (stroke-dasharray). Liste ingrédients avec cases à cocher AlpineJS (pour cuisiner en suivant la liste). Étapes numérotées avec timer optionnel (AlpineJS countdown). Section 'Recettes similaires' (même catégorie, calories proches).
+10 min
+Phase 6 — Finitions & Tests (5h30 – 6h00)
+PHASE 6  Tests, Perf & Livraison      5h30 – 6h00
+Tâche
+Détail & Implémentation
+Durée
+Tests Fonctionnels Complets
+Tester chaque flux utilisateur dans l'ordre : 1) Créer une recette complète avec wizard, 2) Vérifier le calcul des calories sur la page détail, 3) Rechercher par ingrédients (ex: entrer 'poulet, tomate'), 4) Uploader une photo de plat et vérifier l'analyse IA, 5) Uploader une photo de frigo et vérifier les suggestions. Tester sur Chrome et Firefox. Vérifier la console JS (erreurs AlpineJS).
+10 min
+Optimisations Performances
+Exécuter les commandes d'optimisation Laravel. Vérifier que le cache Edamam fonctionne (2ème requête même ingrédient doit être instantanée). Ajouter loading='lazy' sur toutes les images de la grille. Vérifier storage:link pour l'affichage des images uploadées. Compresser les assets CSS/JS si nécessaire.
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+php artisan optimize
+10 min
+README & Livraison
+Rédiger le README.md : prérequis (PHP 8.2+, Composer, WAMP), étapes d'installation pas à pas, clés API nécessaires (Edamam app_id + app_key, Anthropic API key), commandes artisan de démarrage, captures d'écran des 3 fonctionnalités principales. Créer un fichier .env.example avec toutes les variables documentées.
+# Variables .env nécessaires
+EDAMAM_APP_ID=your_app_id
+EDAMAM_APP_KEY=your_app_key
+ANTHROPIC_API_KEY=sk-ant-...
+FILESYSTEM_DISK=public
+10 min
+4. Extraits de Code Essentiels
+4.1 ClaudeVisionService.php — Appel API Vision
+<?php namespace App\Services;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+class ClaudeVisionService {
+  private string $apiKey;
+  private string $model = 'claude-opus-4-6';
+  public function __construct() {
+    $this->apiKey = env('ANTHROPIC_API_KEY');
+  }
+  public function analyzeFood(string $imagePath): array {
+    $imageData = base64_encode(file_get_contents(storage_path('app/public/'.$imagePath)));
+    $mimeType  = mime_content_type(storage_path('app/public/'.$imagePath));
+    $response = Http::timeout(30)->withHeaders([
+      'x-api-key'        => $this->apiKey,
+      'anthropic-version'=> '2023-06-01',
+      'content-type'     => 'application/json',
+    ])->post('https://api.anthropic.com/v1/messages', [
+      'model'      => $this->model,
+      'max_tokens' => 1000,
+      'messages'   => [[
+        'role'    => 'user',
+        'content' => [
+          ['type' => 'image', 'source' => ['type' => 'base64',
+           'media_type' => $mimeType, 'data' => $imageData]],
+          ['type' => 'text', 'text' => $this->getFoodPrompt()],
+        ]
+      ]]
+    ]);
+    $content = $response->json()['content'][0]['text'] ?? '{}';
+    return json_decode($content, true) ?? [];
+  }
+}
+4.2 Composant Blade — x-glass-card
+{{-- resources/views/components/glass-card.blade.php --}}
+<div {{ $attributes->merge(['class' => 'glass-card']) }}>
+  {{ $slot }}
+</div>
+/* CSS correspondant dans app.css */
+.glass-card {
+  background: rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  padding: 1.5rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.glass-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 32px rgba(46, 204, 154, 0.15);
+}
+4.3 AlpineJS — Recherche Multi-Tags (Frigo)
+<div x-data="{ tags: [], input: '' }">
+  <div class='tag-container'>
+    <template x-for='(tag, i) in tags' :key='i'>
+      <span class='tag'>
+        <span x-text='tag'></span>
+        <button @click='tags.splice(i,1)'>x</button>
+      </span>
+    </template>
+    <input x-model='input' @keydown.enter.prevent="if(input.trim()) { tags.push(input.trim()); input=''; }"
+           @keydown.backspace="if(!input && tags.length) tags.pop()"
+           placeholder='Ajouter un ingrédient...' />
+  </div>
+  <button @click="$fetch('/search', {method:'POST', body: JSON.stringify({ingredients: tags})})">
+    Trouver des recettes
+  </button>
+</div>
+5. Configuration des APIs Externes
+5.1 Edamam Food Database API
+Inscription gratuite sur developer.edamam.com. Le plan gratuit offre 1 000 requêtes par mois, largement suffisant pour le développement. Créer une application de type 'Food Database API' pour obtenir les identifiants.
+Paramètre
+Valeur / Description
+URL de base
+https://api.edamam.com/api/food-database/v2/parser
+Méthode
+GET
+app_id
+Identifiant d'application (récupéré après inscription)
+app_key
+Clé API secrète (à stocker dans .env uniquement)
+ingr
+Nom de l'ingrédient à rechercher (ex: 'chicken breast')
+Fallback gratuit
+OpenFoodFacts : https://world.openfoodfacts.org/cgi/search.pl?search_terms={ingredient}&json=true
+5.2 Claude Vision API (Anthropic)
+Créer un compte sur console.anthropic.com et générer une clé API. Les requêtes avec images consomment plus de tokens — prévoir ~500-1000 tokens par analyse.
+Paramètre
+Valeur
+URL
+https://api.anthropic.com/v1/messages
+Modèle recommandé
+claude-opus-4-6 (Vision activée)
+Header auth
+x-api-key: {ANTHROPIC_API_KEY}
+Version API
+anthropic-version: 2023-06-01
+Max tokens
+1000 (suffisant pour les réponses JSON)
+Format image
+Base64 encodé (jpg, png, webp) — max 5 Mo recommandé
+5.3 Variables d'Environnement .env
+# Base de données (WAMP)
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=recettes_db
+DB_USERNAME=root
+DB_PASSWORD=
+# API Nutritionnelle Edamam
+EDAMAM_APP_ID=votre_app_id_ici
+EDAMAM_APP_KEY=votre_app_key_ici
+# Claude Vision (Anthropic)
+ANTHROPIC_API_KEY=sk-ant-xxxxxxxxxxxxxxxx
+# Storage
+FILESYSTEM_DISK=public
+# Cache (file en développement, redis en production)
+CACHE_DRIVER=file
+SESSION_DRIVER=file
+6. Checklist de Livraison
+6.1 Vérifications Techniques
+php artisan storage:link exécuté (accès aux images uploadées)
+php artisan config:cache + route:cache + view:cache exécutés
+Toutes les migrations passées sans erreur (php artisan migrate:status)
+Clés API Edamam + Anthropic présentes dans .env et fonctionnelles
+Cache nutrition validé (tester 2x le même ingrédient → 2ème call instantané)
+Timeout API Claude configuré à 30s minimum
+Dossier storage/app/public/uploads/ créé et accessible en écriture
+6.2 Tests Utilisateur
+Créer une recette complète via le wizard 3 étapes — Vérifié
+Modifier une recette existante — calcul calories mis à jour — Vérifié
+Rechercher avec 3 ingrédients (ex: 'oignon', 'tomate', 'ail') — Résultats cohérents
+Uploader une photo de plat — JSON retourné et affiché correctement
+Uploader une photo de frigo — Ingrédients détectés + recettes suggérées
+Filtre calories max (ex: 500 kcal) — Ne montre que recettes < 500 kcal
+Responsive : vérifier l'affichage sur mobile (Chrome DevTools)
+6.3 Priorités si Manque de Temps
+Priorité
+Fonctionnalité
+Décision
+CRITIQUE
+CRUD recettes + BDD
+Jamais négociable — c'est le coeur de l'app
+CRITIQUE
+Calcul calories API
+Jamais négociable — fonctionnalité principale
+IMPORTANT
+Recherche par ingrédients
+Peut être simplifié : liste manuelle sans scoring IA
+IMPORTANT
+Analyse photo d'un plat
+Garder si le temps le permet — très impressionnant
+BONUS
+Scan frigo IA
+Réductible : retourner juste la liste détectée sans recettes
+BONUS
+Authentification users
+Optionnel — app sans login est acceptable
+Bon développement ! Ce plan est conçu pour 6 heures de travail soutenu.
+Laravel + Glassmorphism + IA = une application dont vous serez fier.
