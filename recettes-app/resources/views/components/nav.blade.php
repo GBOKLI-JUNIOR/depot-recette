@@ -7,13 +7,27 @@
             <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
             NutriChef IA
         </a>
-        <div class="hidden md:flex space-x-8 text-sm font-medium">
+        <div class="hidden md:flex space-x-8 text-sm font-medium items-center">
             <a href="{{ route('recipes.index') }}" class="hover:text-[#2ECC9A] transition-colors">Mes Recettes</a>
             <a href="/search" class="hover:text-[#2ECC9A] transition-colors">Frigo Magique</a>
             <a href="/analyze-image" class="hover:text-[#2ECC9A] transition-colors">Analyse IA</a>
+            
+            @auth
+                <span class="text-gray-400">|</span>
+                <span class="text-[#F4A261]">{{ Auth::user()->name }}</span>
+                <form method="POST" action="{{ route('logout') }}" class="inline">
+                    @csrf
+                    <button type="submit" class="hover:text-red-400 transition-colors">Déconnexion</button>
+                </form>
+            @else
+                <span class="text-gray-400">|</span>
+                <a href="{{ route('login') }}" class="hover:text-[#2ECC9A] transition-colors">Connexion</a>
+            @endauth
         </div>
+        @auth
         <a href="{{ route('recipes.create') }}" class="bg-[#2ECC9A] hover:bg-[#25a980] text-[#0D1B2A] px-5 py-2 rounded-full font-bold transition-transform transform hover:scale-95">
             + Nouvelle Recette
         </a>
+        @endauth
     </div>
 </nav>

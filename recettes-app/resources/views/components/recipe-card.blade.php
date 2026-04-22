@@ -2,7 +2,7 @@
 
 <div class="glass-card relative overflow-hidden group cursor-pointer animate-fade-slide p-0">
     @if($recipe->image_path)
-        <img src="{{ Storage::url($recipe->image_path) }}" alt="{{ $recipe->title }}" class="w-full h-48 object-cover rounded-t-[20px]">
+        <img src="{{ asset('storage/' . $recipe->image_path) }}" alt="{{ $recipe->title }}" class="w-full h-48 object-cover rounded-t-[20px]">
     @else
         <div class="w-full h-48 bg-gray-800 rounded-t-[20px] flex items-center justify-center text-gray-500">
             Aucune image

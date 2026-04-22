@@ -27,6 +27,12 @@
                 headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
                 body: formData
             });
+            
+            if (!res.ok) {
+                let text = await res.text();
+                throw new Error(text || 'Erreur serveur ' + res.status);
+            }
+
             let data = await res.json();
             if (data.error) {
                 this.error = data.error;
@@ -34,7 +40,8 @@
                 this.result = data;
             }
         } catch (e) {
-            this.error = 'Une erreur s\'est produite lors de l\'analyse.';
+            console.error(e);
+            this.error = 'Une erreur est survenue : ' + (e.message || 'Impossible de contacter le serveur.');
         }
         this.loading = false;
     }
@@ -61,7 +68,7 @@
             <div x-show="loading" class="absolute inset-0 bg-black/60 rounded-2xl flex items-center justify-center backdrop-blur-sm">
                 <div class="text-center">
                     <svg class="animate-spin h-10 w-10 text-[#2ECC9A] mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                    <p class="text-[#2ECC9A] font-bold">L'IA de Claude analyse votre plat...</p>
+                    <p class="text-[#2ECC9A] font-bold">L'IA de Hugging Face analyse votre plat...</p>
                 </div>
             </div>
         </div>

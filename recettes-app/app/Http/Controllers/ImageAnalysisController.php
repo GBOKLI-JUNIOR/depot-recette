@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Services\ClaudeVisionService;
+use App\Services\HuggingFaceVisionService;
 
 class ImageAnalysisController extends Controller
 {
@@ -12,7 +12,7 @@ class ImageAnalysisController extends Controller
         return view('analysis.index');
     }
 
-    public function analyzeFood(Request $request, ClaudeVisionService $visionService)
+    public function analyzeFood(Request $request, HuggingFaceVisionService $visionService)
     {
         $request->validate([
             'image' => 'required|image|max:5120',
